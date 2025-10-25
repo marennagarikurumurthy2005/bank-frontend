@@ -67,6 +67,11 @@ const Login = () => {
     }
   };
 
+
+  const navtoReg=()=>{
+    navigate('/register');
+  }
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row relative">
       <ToastContainer />
@@ -149,12 +154,12 @@ const Login = () => {
 
           <p className="text-center text-gray-600 mt-6 text-sm">
             Don’t have an account?{" "}
-            <a
-              href="/register"
+            <button onClick={navtoReg}><a
+              href=""
               className="text-blue-600 font-semibold hover:underline"
             >
               Register here
-            </a>
+            </a></button>
           </p>
         </div>
       </div>
