@@ -5,9 +5,13 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(),tailwindcss(),],
+    optimizeDeps: {
+    include: ["axios"], 
+  },
+
   build: {
     rollupOptions: {
-      external: ["axios"], // ✅ explicitly tell Vite to treat axios as an external dependency
+      external: [], 
     },
   },
 })
