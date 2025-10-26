@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { User } from "lucide-react";
+import { User ,LogOut,Download } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -131,6 +131,45 @@ const Dashboard = () => {
       : userData.account_number || "N/A";
   const formattedBalance = Number(userData.balance || 0).toFixed(2);
 
+
+const downloadCSV = () => {
+  if (transactions.length === 0) {
+    toast.warning("No transactions to download!");
+    return;
+  }
+
+  // Headers
+  const headers = ["Date & Time", "Amount (₹)", " Transaction Type"];
+
+  // Rows
+  const rows = transactions.map((t) => [
+    new Date(t.timestamp).toLocaleString(),
+    t.amount,
+    t.type.toUpperCase(),
+  ]);
+
+  //  Add BOM (\uFEFF) for Excel to recognize UTF-8 and show ₹ properly
+  const csvContent =
+    "\uFEFF" +
+    [headers, ...rows]
+      .map((e) => e.map((v) => `"${v}"`).join(","))
+      .join("\n");
+
+  //  Create blob with proper UTF-8 encoding
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  //  Create and trigger download link
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", "transactions_report.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+
+
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 to-blue-100">
       {/* Toast notifications */}
@@ -150,9 +189,10 @@ const Dashboard = () => {
               </span>
               <button
                 onClick={handleLogout}
-                className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition"
+                className="flex items-center gap-2 bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition"
               >
-                Logout
+                <span>Logout</span>
+                <LogOut size={18} />
               </button>
             </div>
             <span className="text-sm sm:text-base text-gray-600">
@@ -181,66 +221,82 @@ const Dashboard = () => {
         </div>
 
         {/* Transactions & Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-4xl text-center">
-          {/* Credit */}
-          <div className="bg-blue-50 p-4 sm:p-6 rounded-2xl shadow hover:shadow-lg transition flex flex-col items-center">
-            <h3 className="text-xl sm:text-2xl font-semibold text-blue-600 mb-2">Credit</h3>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              name="amount"
-              value={credit.amount}
-              onChange={(e) => handleChange(e, "credit")}
-              placeholder="Enter amount"
-              className="border-green-400 p-2 sm:p-3 w-full sm:w-64 rounded-3xl bg-green-200 font-bold mb-3"
-            />
-            <button
-              onClick={() => handleTransaction("credit")}
-              className="border p-2 w-full sm:w-64 rounded-3xl font-bold bg-green-500 hover:bg-green-700 transition"
-            >
-              Submit
-            </button>
-          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-5xl text-center">
+            {/* Credit */}
+            <div className="bg-blue-50 p-6 rounded-2xl shadow hover:shadow-lg transition flex flex-col items-center">
+              <h3 className="text-xl sm:text-2xl font-semibold text-blue-600 mb-3">Credit +</h3>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                name="amount"
+                value={credit.amount}
+                onChange={(e) => handleChange(e, "credit")}
+                placeholder="Enter amount"
+                className="border-green-400 p-3 w-full rounded-3xl bg-green-200 font-bold mb-3"
+              />
+              <button
+                onClick={() => handleTransaction("credit")}
+                className="border p-2 w-full rounded-3xl font-bold bg-green-500 hover:bg-green-700 text-white transition"
+              >
+                Submit
+              </button>
+            </div>
 
-          {/* Debit */}
-          <div className="bg-blue-50 p-4 sm:p-6 rounded-2xl shadow hover:shadow-lg transition flex flex-col items-center">
-            <h3 className="text-xl sm:text-2xl font-semibold text-blue-600 mb-2">Debit</h3>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              name="amount"
-              value={debit.amount}
-              onChange={(e) => handleChange(e, "debit")}
-              placeholder="Enter amount"
-              className="border-red-400 p-2 sm:p-3 w-full sm:w-64 rounded-3xl bg-red-200 font-bold mb-3"
-            />
-            <button
-              onClick={() => handleTransaction("debit")}
-              className="border p-2 w-full sm:w-64 rounded-3xl font-bold bg-red-500 hover:bg-red-700 text-white transition"
-            >
-              Submit
-            </button>
-          </div>
+            {/* Debit */}
+            <div className="bg-blue-50 p-6 rounded-2xl shadow hover:shadow-lg transition flex flex-col items-center">
+              <h3 className="text-xl sm:text-2xl font-semibold text-blue-600 mb-3">Debit -</h3>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                name="amount"
+                value={debit.amount}
+                onChange={(e) => handleChange(e, "debit")}
+                placeholder="Enter amount"
+                className="border-red-400 p-3 w-full rounded-3xl bg-blue-200 font-bold mb-3"
+              />
+              <button
+                onClick={() => handleTransaction("debit")}
+                className="border p-2 w-full rounded-3xl font-bold bg-blue-500 hover:bg-blue-700 text-white transition"
+              >
+                Submit
+              </button>
+            </div>
 
-          {/* Transaction History */}
-          <div className="bg-blue-50 p-4 sm:p-6 rounded-2xl shadow hover:shadow-lg transition h-64 overflow-y-auto">
-            <h3 className="text-xl sm:text-2xl font-semibold text-blue-600 mb-2 sticky -top-2 mt-0 p-3 bg-blue-50">Transactions</h3>
-            {transactions.length === 0 ? (
-              <p className="text-gray-700">No transactions yet.</p>
-            ) : (
-              <ul className="text-gray-700 text-sm sm:text-base">
-                {transactions.map((t) => (
-                  <li key={t.id} className="mb-2 text-left">
-                    <span className="font-semibold">{t.type.toUpperCase()}</span>: ₹
-                    {Number(t.amount).toFixed(2)} on {new Date(t.timestamp).toLocaleString()}
-                  </li>
-                ))}
-              </ul>
-            )}
+            {/* Transactions */}
+            <div className="bg-blue-50 p-6 rounded-2xl shadow hover:shadow-lg transition h-64 overflow-y-auto">
+              <h3 className="text-xl sm:text-2xl font-semibold text-blue-600 mb-3 sticky top-0 bg-blue-50">
+                Transactions
+              </h3>
+              {transactions.length === 0 ? (
+                <p className="text-gray-700 text-center">No transactions yet.</p>
+              ) : (
+                <ul className="text-gray-700 text-sm sm:text-base text-left">
+                  {transactions.map((t) => (
+                    <li key={t.id} className="mb-2">
+                      <span className="font-semibold">{t.type.toUpperCase()}</span>: ₹
+                      {Number(t.amount).toFixed(2)} on {new Date(t.timestamp).toLocaleString()}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Download Report */}
+            <div className="bg-blue-50 p-6 rounded-2xl shadow hover:shadow-lg transition flex flex-col items-center">
+              <h3 className="text-xl sm:text-2xl font-semibold text-blue-600 mb-3 text-center">
+                Download transactions report
+              </h3>
+              <button
+                onClick={downloadCSV}
+                className="flex items-center justify-center gap-2 border p-2 w-full rounded-3xl font-bold bg-red-500 hover:bg-red-700 text-white transition"
+              >
+                <span>Download</span>
+                <Download size={18} />
+              </button>
+            </div>
           </div>
-        </div>
       </div>
     </div>
   );
